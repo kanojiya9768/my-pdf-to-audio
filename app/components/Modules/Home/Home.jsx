@@ -12,6 +12,7 @@ import InetractiveTextDisplay from "./child/InetractiveTextDisplay";
 import usePdfReader from "@/utils/hooks/usePdfReader";
 
 const HomePage = () => {
+  
   const {
     // state
     pdfFile,

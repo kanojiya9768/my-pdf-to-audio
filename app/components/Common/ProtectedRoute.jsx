@@ -9,22 +9,27 @@ const ProtectedRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // run check only on client
-    if (typeof window !== "undefined") {
-      const auth = localStorage.getItem("auth") === "true";
+    if (typeof window === "undefined") return;
 
-      if (!auth && pathName !== "/login") {
-        router.push("/login");
-      } else if (auth && pathName === "/login") {
-        router.push("/");
+    const auth = localStorage.getItem("auth") === "true";
+    const user = localStorage.getItem("user");
+
+    if (!auth || !user) {
+      setIsAuthenticated(false);
+      if (pathName !== "/login") {
+        router.replace("/login"); // redirect if not logged in
       }
-
-      setIsAuthenticated(auth);
-      setLoading(false);
+    } else {
+      setIsAuthenticated(true);
+      if (pathName === "/login") {
+        router.replace("/"); // already logged in → go home
+      }
     }
+
+    setLoading(false);
   }, [pathName, router]);
 
-  // 🔹 show loader until auth check finishes
+  // 🔹 Loader until auth check finishes
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -33,11 +38,12 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  // 🔹 only render children if allowed
+  // 🔹 If not authenticated & trying to access protected route
   if (!isAuthenticated && pathName !== "/login") {
     return null;
   }
 
+  // 🔹 Allow access
   return <>{children}</>;
 };
 

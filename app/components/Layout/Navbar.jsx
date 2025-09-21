@@ -1,17 +1,31 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Wifi, WifiOff } from "lucide-react";
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
   const [online, setOnline] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("user");
-      if (stored) setUser(JSON.parse(stored));
+      if (stored) {
+        const parsed = JSON.parse(stored);
+
+        // Normalize Firebase user object
+        setUser({
+          uid: parsed.uid,
+          name:
+            parsed.displayName ||
+            parsed.providerData?.[0]?.displayName ||
+            parsed.email?.split("@")[0] ||
+            "User",
+          email: parsed.email || parsed.providerData?.[0]?.email,
+        });
+      }
     }
 
     const handleOnline = () => setOnline(true);
@@ -23,7 +37,7 @@ const Navbar = () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem("auth");
@@ -31,6 +45,7 @@ const Navbar = () => {
     router.replace("/login");
   };
 
+  
   return (
     <nav className="bg-white/70 backdrop-blur-lg shadow-md border-b border-gray-200 sticky w-full top-0 z-50">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
@@ -49,10 +64,10 @@ const Navbar = () => {
               {/* Avatar */}
               <div className="flex items-center space-x-2 cursor-pointer select-none">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                  {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  {user.name?.charAt(0).toUpperCase() || "U"}
                 </div>
                 <span className="hidden sm:block font-medium text-gray-700">
-                  {user.name || "User"}
+                  {user.name}
                 </span>
               </div>
 
@@ -60,11 +75,11 @@ const Navbar = () => {
               <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-xl border border-gray-200 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                 <div className="flex items-center space-x-3 mb-3">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
-                    {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                    {user.name?.charAt(0).toUpperCase() || "U"}
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-gray-800">
-                      {user.name || "User"}
+                      {user.name}
                     </h4>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
