@@ -1,6 +1,6 @@
 import Navbar from "../components/Layout/Navbar";
 
-export default function RootLayout({ children }) {
+export default function NavbarLayout({ children }) {
   return (
     <div>
       <Navbar />
