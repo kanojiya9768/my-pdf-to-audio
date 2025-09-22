@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Loader, Download } from "lucide-react";
 import Header from "./child/Header";
 import FileUpload from "./child/FileUpload";
@@ -9,12 +9,14 @@ import { QUALITY_CONFIG } from "@/lib/constantJSON";
 import { ExtractionError } from "./child/ExtrractionError";
 import TextPreview from "./child/TextPreview";
 import InetractiveTextDisplay from "./child/InetractiveTextDisplay";
-import SummaryDisplay from "./child/SummaryDisplay"; // Assuming SummaryDisplay is in child folder
+import SummaryDisplay from "./child/SummaryDisplay";
 import usePdfReader from "@/utils/hooks/usePdfReader";
+import Modal from "../../Common/Modal";
 
 const HomePage = () => {
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+
   const {
-    // state
     pdfFile,
     extractedText,
     isExtracting,
@@ -38,14 +40,10 @@ const HomePage = () => {
     summary,
     isSummarizing,
     summarizationError,
-
-    // refs
     fileInputRef,
     textChunks,
     currentChunkIndex,
     textPreviewRef,
-
-    // actions
     handleFileUpload,
     retryExtraction,
     startSpeaking,
@@ -57,8 +55,6 @@ const HomePage = () => {
     exportText,
     summarizeText,
     cancelSummarization,
-
-    // derived
     progress,
   } = usePdfReader();
 
@@ -156,9 +152,21 @@ const HomePage = () => {
                   </button>
                 </div>
               )}
+
+              {/* Button to open AI Summary Modal */}
+              {extractedText && (
+                <div className="bg-indigo-50 rounded-xl p-4">
+                  <button
+                    onClick={() => setIsSummaryModalOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    Open AI Summary
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Right Panel - Content */}
+            {/* Right Panel */}
             <div className="lg:col-span-2 space-y-6">
               {/* PDF Information */}
               {pdfFile && (
@@ -187,19 +195,6 @@ const HomePage = () => {
                 />
               )}
 
-              {/* AI Summary - Streaming ChatGPT-like Display */}
-              {extractedText && (
-                <SummaryDisplay
-                  summary={summary}
-                  isSummarizing={isSummarizing}
-                  summarizationError={summarizationError}
-                  summarizeText={summarizeText}
-                  cancelSummarization={cancelSummarization}
-                  extractedText={extractedText}
-                  speakTextEnhanced={speakTextEnhanced}
-                />
-              )}
-
               {/* Helpful Tips */}
               {!extractedText && !isExtracting && (
                 <div className="bg-blue-50 rounded-xl p-6">
@@ -207,27 +202,11 @@ const HomePage = () => {
                     Tips for Better Results
                   </h3>
                   <div className="space-y-2 text-sm text-blue-700">
-                    <p>
-                      • <strong>Image-based PDFs:</strong> This tool extracts
-                      text, not images. For scanned PDFs, use OCR software
-                      first.
-                    </p>
-                    <p>
-                      • <strong>Garbled text:</strong> Try different extraction
-                      methods if the auto-detect fails.
-                    </p>
-                    <p>
-                      • <strong>Password-protected:</strong> Remove password
-                      protection before uploading.
-                    </p>
-                    <p>
-                      • <strong>Large files:</strong> Processing may take longer
-                      for files over 10MB.
-                    </p>
-                    <p>
-                      • <strong>Multiple languages:</strong> Works best with
-                      English content.
-                    </p>
+                    <p>• <strong>Image-based PDFs:</strong> Use OCR first.</p>
+                    <p>• <strong>Garbled text:</strong> Try another method.</p>
+                    <p>• <strong>Password-protected:</strong> Remove password.</p>
+                    <p>• <strong>Large files:</strong> May take longer.</p>
+                    <p>• <strong>Languages:</strong> Works best with English.</p>
                   </div>
                 </div>
               )}
@@ -235,6 +214,19 @@ const HomePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal for AI Summary */}
+      <Modal isOpen={isSummaryModalOpen} onClose={() => setIsSummaryModalOpen(false)}>
+        <SummaryDisplay
+          summary={summary}
+          isSummarizing={isSummarizing}
+          summarizationError={summarizationError}
+          summarizeText={summarizeText}
+          cancelSummarization={cancelSummarization}
+          extractedText={extractedText}
+          speakTextEnhanced={speakTextEnhanced}
+        />
+      </Modal>
     </div>
   );
 };

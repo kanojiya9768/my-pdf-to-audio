@@ -10,28 +10,33 @@ export async function POST(request) {
       );
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPEN_ROUTER_GROK_4_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "x-ai/grok-4-fast:free",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `Analyze this PDF text and create a comprehensive Explanation. Text: ${text}, Format your response as a natural.give me whole explanation like text to speech.`,
-              },
-            ],
-          },
-        ],
-        stream: true,
-      }),
-    });
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPEN_ROUTER_GROK_4_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "x-ai/grok-4-fast:free",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: `Analyze this PDF text carefully and give me a clear, natural explanation in simple language. 
+Explain it like I’m reading my own document aloud, in a text-to-speech style (fluent, engaging, and easy to follow). 
+Here is the text: ${text}`,
+                },
+              ],
+            },
+          ],
+          stream: true,
+        }),
+      }
+    );
 
     if (!response.ok) {
       return NextResponse.json(
@@ -66,7 +71,9 @@ export async function POST(request) {
               if (line.trim() === "" || !line.startsWith("data:")) continue; // Skip empty or non-data lines
               const data = line.slice(5).trim();
               if (data === "[DONE]") {
-                controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
+                controller.enqueue(
+                  new TextEncoder().encode("data: [DONE]\n\n")
+                );
                 continue;
               }
               if (data) {
@@ -74,7 +81,11 @@ export async function POST(request) {
                   JSON.parse(data); // Validate JSON
                   controller.enqueue(new TextEncoder().encode(`${line}\n\n`));
                 } catch (error) {
-                  console.error("Server: Invalid JSON chunk skipped:", data, error);
+                  console.error(
+                    "Server: Invalid JSON chunk skipped:",
+                    data,
+                    error
+                  );
                 }
               }
             }
