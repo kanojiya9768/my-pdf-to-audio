@@ -10,7 +10,7 @@ const InetractiveTextDisplay = ({
   speakTextEnhanced
 }) => {
   return (
-    <div className="bg-gray-50 rounded-xl p-6">
+    <div className="bg-gray-50 rounded-xl p-6 border border-gray-300 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold">Interactive Reader</h3>
         <div className="flex items-center gap-2 text-sm text-gray-500">

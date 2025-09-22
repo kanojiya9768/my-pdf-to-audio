@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Wifi, WifiOff } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
@@ -45,18 +47,23 @@ const Navbar = () => {
     router.replace("/login");
   };
 
-  
   return (
-    <nav className="bg-white/70 backdrop-blur-lg shadow-md border-b border-gray-200 sticky w-full top-0 z-50">
+    <nav className="bg-white backdrop-blur-lg shadow-md border-b border-gray-200 sticky w-full top-0 z-50">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Brand */}
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"></div>
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              PDF2Audio
-            </span>
-          </div>
+          <Link
+            href={"/"}
+            className="flex items-center space-x-2 overflow-hidden"
+          >
+            <Image
+              width={1000}
+              height={1000}
+              src={"/logo.png"}
+              className="w-48 object-contain"
+              alt="logo"
+            />
+          </Link>
 
           {/* Profile Section */}
           {user && (

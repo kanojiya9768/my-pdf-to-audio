@@ -61,11 +61,11 @@ const HomePage = () => {
   return (
     <div className="h-full p-4">
       <div className="mx-auto">
-        <div className="bg-white h-full overflow-auto shadow-md">
+        <div className="bg-white h-full overflow-auto">
           {/* Header */}
           <Header />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-6">
             {/* Left Panel */}
             <div className="lg:col-span-1 space-y-6">
               {/* File Upload */}
@@ -105,7 +105,7 @@ const HomePage = () => {
               {/* Text Quality Indicator */}
               {QUALITY_CONFIG[textQuality] && (
                 <div
-                  className={`rounded-xl p-4 ${QUALITY_CONFIG[textQuality].color}`}
+                  className={`rounded-xl p-4 ${QUALITY_CONFIG[textQuality].color} border border-gray-300 shadow-sm`}
                 >
                   <p className="font-medium">
                     Text Quality: {textQuality.toUpperCase()}
@@ -142,7 +142,7 @@ const HomePage = () => {
 
               {/* Export Button */}
               {extractedText && (
-                <div className="bg-green-50 rounded-xl p-4">
+                <div className="bg-green-50 rounded-xl p-4 border border-gray-300 shadow-sm">
                   <button
                     onClick={exportText}
                     className="w-full flex items-center justify-center gap-2 p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -155,7 +155,7 @@ const HomePage = () => {
 
               {/* Button to open AI Summary Modal */}
               {extractedText && (
-                <div className="bg-indigo-50 rounded-xl p-4">
+                <div className="bg-indigo-50 rounded-xl p-4 border border-gray-300 shadow-sm">
                   <button
                     onClick={() => setIsSummaryModalOpen(true)}
                     className="w-full flex items-center justify-center gap-2 p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -197,7 +197,7 @@ const HomePage = () => {
 
               {/* Helpful Tips */}
               {!extractedText && !isExtracting && (
-                <div className="bg-blue-50 rounded-xl p-6">
+                <div className="bg-blue-50 rounded-xl p-6 border border-gray-300 shadow-sm">
                   <h3 className="text-lg font-bold text-blue-800 mb-3">
                     Tips for Better Results
                   </h3>

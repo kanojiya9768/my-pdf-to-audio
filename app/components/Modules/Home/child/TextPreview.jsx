@@ -2,7 +2,7 @@ import React from "react";
 
 const TextPreview = ({ extractedText }) => {
   return (
-    <div className="bg-gray-50 rounded-xl p-6">
+    <div className="bg-gray-50 rounded-xl p-6 border border-gray-300 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold">Extracted Content Preview</h3>
         <span className="text-sm text-gray-500">

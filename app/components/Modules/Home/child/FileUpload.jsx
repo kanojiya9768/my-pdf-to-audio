@@ -10,7 +10,7 @@ const FileUpload = ({
   setExtractionMethod,
 }) => {
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6">
+    <div className="rounded-xl p-6 shadow-md border border-gray-300">
       <input
         type="file"
         accept=".pdf"

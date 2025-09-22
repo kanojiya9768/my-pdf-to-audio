@@ -9,7 +9,7 @@ const DocumentAnalysis = ({
   textQuality,
 }) => {
   return (
-    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6">
+    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-gray-300 shadow-sm">
       <h3 className="text-lg font-bold text-green-800 mb-4">
         Document Analysis
       </h3>

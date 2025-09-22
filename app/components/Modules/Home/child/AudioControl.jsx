@@ -30,7 +30,7 @@ const AudioControl = ({
   setSelectedVoice,
 }) => {
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6">
+    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-gray-300 shadow-sm">
       <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
         <Volume2 className="h-6 w-6 text-indigo-600" />
         Audio Controls

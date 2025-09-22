@@ -64,7 +64,7 @@ const SummaryDisplay = ({
   }, [summary]);
 
   // --- AUDIO FUNCTIONS ---
-  const playAudio = (textToSpeak = summary) => {
+const playAudio = (textToSpeak = summary) => {
     if (!textToSpeak) return;
     stopAudio();
     const selected = voices.find((v) => v.name === selectedVoice);
@@ -220,17 +220,20 @@ const SummaryDisplay = ({
       // Parse each line (each line is usually a JSON object starting with "data: ")
       const lines = chunk.split("\n").filter(Boolean);
       for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          try {
-            const parsed = JSON.parse(line.replace("data: ", ""));
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              result += content;
-              setChatOutput(result); // live update
-            }
-          } catch (err) {
-            console.error("Failed to parse chunk", err);
+        if (!line.startsWith("data: ")) continue;
+
+        const jsonStr = line.replace(/^data: /, "").trim();
+        if (jsonStr === "[DONE]") continue; // skip end signal
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            result += content;
+            setChatOutput(result); // live update
           }
+        } catch (err) {
+          console.warn("Skipping invalid JSON chunk:", jsonStr);
         }
       }
     }
@@ -253,7 +256,7 @@ const SummaryDisplay = ({
         <h3 className="text-2xl font-bold text-gray-900">AI Summary</h3>
         {extractedText && !isSummarizing && (
           <button
-            onClick={()=>{
+            onClick={() => {
               summarizeText();
               setChatOutput("");
             }}

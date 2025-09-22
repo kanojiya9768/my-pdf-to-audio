@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const { summarizedText, userPrompt, previousMessages } = await request.json();
+    const { summarizedText, userPrompt, previousMessages } =
+      await request.json();
 
     if (!summarizedText || !userPrompt) {
       return NextResponse.json(
@@ -32,18 +33,21 @@ export async function POST(request) {
       },
     ];
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPEN_ROUTER_GROK_4_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "x-ai/grok-4-fast:free",
-        messages,
-        stream: true,
-      }),
-    });
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPEN_ROUTER_GROK_4_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "x-ai/grok-4-fast:free",
+          messages,
+          stream: true,
+        }),
+      }
+    );
 
     if (!response.ok) {
       return NextResponse.json(
