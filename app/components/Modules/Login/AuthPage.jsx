@@ -6,7 +6,7 @@ import { Toaster } from "react-hot-toast";
 import LoginForm from "./child/Login";
 import SignupForm from "./child/Singup";
 
-export default function LoginPage() {
+export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
 
   return (
