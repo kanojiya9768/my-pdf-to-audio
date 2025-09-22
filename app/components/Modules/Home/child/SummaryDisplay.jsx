@@ -42,6 +42,10 @@ const SummaryDisplay = ({
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
 
+  //select what output you want to listen in audio
+  const [selectOutputForAudio, setSelectOutputForAudio] =
+    useState("Summarized");
+
   // Load voices
   useEffect(() => {
     const loadVoices = () => {
@@ -64,13 +68,15 @@ const SummaryDisplay = ({
   }, [summary]);
 
   // --- AUDIO FUNCTIONS ---
-const playAudio = (textToSpeak = summary) => {
+  const playAudio = (textToSpeak = summary) => {
     if (!textToSpeak) return;
     stopAudio();
     const selected = voices.find((v) => v.name === selectedVoice);
     if (!selected) return;
 
-    const sentences = textToSpeak.split(/([.!?])\s/).filter(Boolean);
+    const sentences = textToSpeak.match(/[^.!?।]+[.!?।]?/g) || [textToSpeak];
+    console.log(sentences);
+
     setProgress({ index: 0, total: sentences.length });
 
     let idx = 0;
@@ -363,8 +369,13 @@ const playAudio = (textToSpeak = summary) => {
           <div className="flex items-center gap-3 mb-3">
             {!isPlaying ? (
               <button
-                onClick={() => playAudio(chatOutput || summary)}
-                className="p-3 bg-indigo-600 text-white rounded-full"
+                onClick={() =>
+                  playAudio(
+                    selectOutputForAudio == "Chat" ? chatOutput : summary
+                  )
+                }
+                disabled={!voices.length}
+                className="p-3 bg-indigo-600 text-white rounded-full disabled:opacity-50"
               >
                 <Play size={20} />
               </button>
@@ -441,6 +452,20 @@ const playAudio = (textToSpeak = summary) => {
               {voices.map((voice, i) => (
                 <option key={i} value={voice.name}>
                   {voice.name} ({voice.lang})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block pt-3">
+            Select Which Outout:
+            <select
+              value={selectOutputForAudio || ""}
+              onChange={(e) => setSelectOutputForAudio(e.target.value)}
+              className="mt-1 p-2 border rounded w-full"
+            >
+              {["Chat", "Summarized"].map((data, i) => (
+                <option key={i} value={data}>
+                  {data}
                 </option>
               ))}
             </select>
