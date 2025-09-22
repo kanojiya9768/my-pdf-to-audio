@@ -62,6 +62,7 @@ const Navbar = () => {
               src={"/logo.png"}
               className="w-48 object-contain"
               alt="logo"
+              loading="lazy"
             />
           </Link>
 
