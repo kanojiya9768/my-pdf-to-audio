@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Wifi, WifiOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { supabase } from "@/supabaseClient";
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
@@ -17,15 +18,15 @@ const Navbar = () => {
       if (stored) {
         const parsed = JSON.parse(stored);
 
-        // Normalize Firebase user object
+        // Normalize Supabase user object
         setUser({
-          uid: parsed.uid,
+          uid: parsed.id, // Supabase user id
           name:
-            parsed.displayName ||
-            parsed.providerData?.[0]?.displayName ||
+            parsed.user_metadata?.full_name ||
+            parsed.user_metadata?.name ||
             parsed.email?.split("@")[0] ||
             "User",
-          email: parsed.email || parsed.providerData?.[0]?.email,
+          email: parsed.email,
         });
       }
     }
@@ -41,12 +42,13 @@ const Navbar = () => {
     };
   }, [pathname]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem("auth");
     localStorage.removeItem("user");
     router.replace("/login");
   };
-
+  
   return (
     <nav className="bg-white backdrop-blur-lg shadow-md border-b border-gray-200 sticky w-full top-0 z-50">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">

@@ -634,6 +634,7 @@ export default function usePdfReader(initialOptions = {}) {
       eventOrFile && eventOrFile.target
         ? eventOrFile.target.files[0]
         : eventOrFile;
+
     if (file && file.type === "application/pdf") {
       setPdfFile(file);
       setExtractedText("");

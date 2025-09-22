@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import ProtectedRoute from "../components/Common/ProtectedRoute";
 import Navbar from "../components/Layout/Navbar";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
         <ProtectedRoute>
           <Navbar />
           {children}
+          <Toaster position="bottom-right" />
         </ProtectedRoute>
       </body>
     </html>
