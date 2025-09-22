@@ -4,9 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
  * usePdfReader
  * - Handles PDF text extraction (multiple strategies)
  * - Handles intelligent chunking, TTS (speechSynthesis) controls
- * - Exposes state, refs and actions to drive a UI
+ * - Handles summarization via local API endpoint
+ * - Exposes state, refs, and actions to drive a UI
  */
-
 export default function usePdfReader(initialOptions = {}) {
   const {
     defaultExtractionMethod = "auto",
@@ -36,6 +36,9 @@ export default function usePdfReader(initialOptions = {}) {
   const [highlightText, setHighlightText] = useState(defaultHighlight);
   const [currentSentence, setCurrentSentence] = useState("");
   const [textQuality, setTextQuality] = useState("unknown");
+  const [summary, setSummary] = useState("");
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [summarizationError, setSummarizationError] = useState("");
 
   // --- Refs
   const fileInputRef = useRef(null);
@@ -43,8 +46,9 @@ export default function usePdfReader(initialOptions = {}) {
   const textChunks = useRef([]);
   const currentChunkIndex = useRef(0);
   const textPreviewRef = useRef(null);
+  const controllerRef = useRef(new AbortController());
 
-  // --- Utilities (copied/kept from your component)
+  // --- Utilities
   const cleanTextItem = (text) => {
     return text
       .replace(/[\x00-\x1F\x7F-\x9F]/g, "")
@@ -55,7 +59,6 @@ export default function usePdfReader(initialOptions = {}) {
 
   const reconstructText = (textItems) => {
     if (!textItems.length) return "";
-
     let result = "";
     let currentLine = [];
     let lastY = textItems[0].y;
@@ -69,7 +72,6 @@ export default function usePdfReader(initialOptions = {}) {
         }
         lastY = item.y;
       }
-
       if (item.text.length > 0) {
         currentLine.push(item.text);
       }
@@ -78,7 +80,6 @@ export default function usePdfReader(initialOptions = {}) {
     if (currentLine.length > 0) {
       result += currentLine.join(" ");
     }
-
     return result.replace(/\s+/g, " ").trim();
   };
 
@@ -86,7 +87,6 @@ export default function usePdfReader(initialOptions = {}) {
     const uint8Array = new Uint8Array(arrayBuffer);
     const decoder = new TextDecoder("utf-8", { fatal: false });
     let text = "";
-
     const pdfText = decoder.decode(uint8Array);
     const btPattern = /BT\s+.*?ET/g;
     const matches = pdfText.match(btPattern);
@@ -102,14 +102,12 @@ export default function usePdfReader(initialOptions = {}) {
             .replace(/\\t/g, "\t")
             .replace(/\\\\/g, "\\")
             .replace(/\\(.)/g, "$1");
-
           if (extractedText.length > 2 && /[a-zA-Z]/.test(extractedText)) {
             text += extractedText + " ";
           }
         }
       });
     }
-
     return text.trim();
   };
 
@@ -117,7 +115,6 @@ export default function usePdfReader(initialOptions = {}) {
     const uint8Array = new Uint8Array(arrayBuffer);
     const decoder = new TextDecoder("utf-8", { fatal: false });
     const content = decoder.decode(uint8Array);
-
     let text = "";
     const lines = content.split(/[\r\n]+/);
 
@@ -131,14 +128,12 @@ export default function usePdfReader(initialOptions = {}) {
         });
       }
     });
-
     return text.trim();
   };
 
   const extractRawText = async (arrayBuffer) => {
     const uint8Array = new Uint8Array(arrayBuffer);
     let text = "";
-
     for (let i = 0; i < uint8Array.length; i++) {
       const char = uint8Array[i];
       if ((char >= 32 && char <= 126) || char === 10 || char === 13) {
@@ -157,7 +152,6 @@ export default function usePdfReader(initialOptions = {}) {
         } catch (e) {}
       }
     }
-
     return text
       .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, " ")
       .replace(/\s+/g, " ")
@@ -166,7 +160,6 @@ export default function usePdfReader(initialOptions = {}) {
 
   const validateAndCleanText = (text) => {
     if (!text || typeof text !== "string") return "";
-
     let cleaned = text
       .replace(/[#\d+][A-Za-z0-9+/=_:;,(){}\[\]!"'?.-]+\s*/g, "")
       .replace(/stream.*?endstream/g, "")
@@ -184,15 +177,12 @@ export default function usePdfReader(initialOptions = {}) {
         cleaned = sentences.join(" ");
       }
     }
-
     return cleaned;
   };
 
   const intelligentTextChunking = (text) => {
     if (!text) return [];
-
     const sentences = text.match(/[^.!?]*[.!?]+/g) || [text];
-
     return sentences
       .map((sentence) => sentence.trim())
       .filter((sentence) => sentence.length > 5 && /[a-zA-Z]/.test(sentence))
@@ -205,7 +195,95 @@ export default function usePdfReader(initialOptions = {}) {
       );
   };
 
-  // --- Main extraction function (moves your existing logic into hook)
+  // --- Summarization function
+  const PdfSummarizeAiApiFn = useCallback(
+    async (PDFExtracterText, onChunkReceived) => {
+      setIsSummarizing(true);
+      setSummarizationError("");
+      let buffer = "";
+      try {
+        const response = await fetch("/api/summarize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: PDFExtracterText }),
+          signal: controllerRef.current.signal,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || `HTTP error! Status: ${response.status}`
+          );
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let result = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            console.log("Client: Stream complete");
+            break;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+
+          // Split by SSE message boundary (\n\n)
+          const lines = buffer.split("\n\n");
+          buffer = lines.pop(); // Keep incomplete data in buffer
+
+          for (const line of lines) {
+            if (line.trim() === "" || !line.startsWith("data:")) continue;
+            const data = line.slice(5).trim();
+            if (data === "[DONE]") {
+              break;
+            }
+            if (!data) continue;
+            try {
+              const json = JSON.parse(data);
+              const content = json.choices?.[0]?.delta?.content;
+              if (content && content.trim()) {
+                result += content;
+                onChunkReceived(content);
+              }
+            } catch (error) {
+              console.error(
+                "Client: Error parsing chunk:",
+                error,
+                "Raw data:",
+                data
+              );
+            }
+          }
+        }
+        return result;
+      } catch (error) {
+        if (error.name === "AbortError") {
+          console.log("Client: Summarization canceled");
+          setSummarizationError("Summarization canceled");
+        } else {
+          console.error("Client: Error in streaming request:", error);
+          setSummarizationError(error.message || "Failed to summarize text");
+        }
+        throw error;
+      } finally {
+        setIsSummarizing(false);
+      }
+    },
+    []
+  );
+
+  // --- Cancel summarization
+  const cancelSummarization = useCallback(() => {
+    controllerRef.current.abort();
+    controllerRef.current = new AbortController(); // Reset controller for future requests
+  }, []);
+
+  // --- Main extraction function
   const extractTextFromPDFRobust = useCallback(
     async (file) => {
       setIsExtracting(true);
@@ -217,14 +295,12 @@ export default function usePdfReader(initialOptions = {}) {
         let extractedContent = "";
         let method = extractionMethod;
 
-        // Auto-detect
         if (method === "auto") {
           const sampleSize = Math.min(arrayBuffer.byteLength, 10000);
           const sample = new Uint8Array(arrayBuffer, 0, sampleSize);
           const sampleText = new TextDecoder("utf-8", { fatal: false }).decode(
             sample
           );
-
           if (
             sampleText.includes("stream") &&
             sampleText.includes("endstream")
@@ -240,11 +316,9 @@ export default function usePdfReader(initialOptions = {}) {
           }
         }
 
-        // PDF.js method (if available)
         if (method === "pdfjs" || method === "auto") {
           try {
             if (!window.pdfjsLib) {
-              // if pdfjs not loaded, attempt to load dynamically (best-effort)
               const script = document.createElement("script");
               script.src =
                 "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
@@ -302,7 +376,6 @@ export default function usePdfReader(initialOptions = {}) {
           }
         }
 
-        // Advanced pattern method
         if (
           (method === "advanced" || method === "auto") &&
           !extractedContent.trim()
@@ -318,7 +391,6 @@ export default function usePdfReader(initialOptions = {}) {
           }
         }
 
-        // OCR-like fallback
         if (
           (method === "ocr-like" || method === "auto") &&
           !extractedContent.trim()
@@ -334,7 +406,6 @@ export default function usePdfReader(initialOptions = {}) {
           }
         }
 
-        // Raw fallback
         if (!extractedContent.trim()) {
           try {
             const content = await extractRawText(arrayBuffer);
@@ -346,7 +417,6 @@ export default function usePdfReader(initialOptions = {}) {
         }
 
         const finalText = validateAndCleanText(extractedContent);
-
         if (finalText.length < 10) {
           throw new Error(
             "Insufficient text extracted. The PDF might be image-based, password-protected, or corrupted."
@@ -354,7 +424,6 @@ export default function usePdfReader(initialOptions = {}) {
         }
 
         setExtractedText(finalText);
-
         const sentences = intelligentTextChunking(finalText);
         textChunks.current = sentences;
       } catch (error) {
@@ -371,6 +440,42 @@ export default function usePdfReader(initialOptions = {}) {
     },
     [extractionMethod]
   );
+
+  // --- Summarization action
+  const summarizeText = useCallback(async () => {
+    if (!extractedText) {
+      setSummarizationError(
+        "No text available to summarize. Please upload and extract text from a PDF first."
+      );
+      return;
+    }
+
+    setSummary("");
+    setIsSummarizing(true);
+    setSummarizationError("");
+
+    try {
+      const maxLength = 10000;
+      const textToSummarize = extractedText.slice(0, maxLength);
+      if (extractedText.length > maxLength) {
+        console.warn(
+          "Text truncated to",
+          maxLength,
+          "characters for summarization"
+        );
+      }
+      const result = await PdfSummarizeAiApiFn(textToSummarize, (chunk) => {
+        setSummary((prev) => prev + chunk);
+      });
+      setSummary(result);
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        setSummarizationError(error.message || "Failed to summarize text");
+      }
+    } finally {
+      setIsSummarizing(false);
+    }
+  }, [extractedText, PdfSummarizeAiApiFn]);
 
   // --- Voices loading
   useEffect(() => {
@@ -405,9 +510,7 @@ export default function usePdfReader(initialOptions = {}) {
         return;
       }
 
-      // Cancel any existing speech
       speechSynthesis.cancel();
-
       const utterance = new SpeechSynthesisUtterance();
       utterance.text = text;
       utterance.rate = speechRate;
@@ -431,7 +534,6 @@ export default function usePdfReader(initialOptions = {}) {
         setIsPaused(false);
         setCurrentSentence("");
         currentChunkIndex.current++;
-
         if (currentChunkIndex.current < textChunks.current.length) {
           setTimeout(() => {
             speakTextEnhanced(textChunks.current[currentChunkIndex.current]);
@@ -458,7 +560,6 @@ export default function usePdfReader(initialOptions = {}) {
       alert("Please upload and extract text from a PDF first.");
       return;
     }
-
     if (isPaused) {
       speechSynthesis.resume();
       setIsPaused(false);
@@ -513,7 +614,6 @@ export default function usePdfReader(initialOptions = {}) {
       alert("No text available to export.");
       return;
     }
-
     const blob = new Blob([extractedText], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -538,6 +638,8 @@ export default function usePdfReader(initialOptions = {}) {
       setPdfFile(file);
       setExtractedText("");
       setExtractionError("");
+      setSummary("");
+      setSummarizationError("");
       setCurrentPage(1);
       setCurrentPosition(0);
       currentChunkIndex.current = 0;
@@ -556,7 +658,7 @@ export default function usePdfReader(initialOptions = {}) {
       : 0;
 
   return {
-    // state
+    // State
     pdfFile,
     extractedText,
     isExtracting,
@@ -584,15 +686,18 @@ export default function usePdfReader(initialOptions = {}) {
     setHighlightText,
     currentSentence,
     textQuality,
+    summary,
+    isSummarizing,
+    summarizationError,
 
-    // refs
+    // Refs
     fileInputRef,
     utteranceRef,
     textChunks,
     currentChunkIndex,
     textPreviewRef,
 
-    // actions
+    // Actions
     handleFileUpload,
     extractTextFromPDFRobust,
     retryExtraction,
@@ -603,8 +708,8 @@ export default function usePdfReader(initialOptions = {}) {
     skipBackward,
     speakTextEnhanced,
     exportText,
-
-    // derived
+    summarizeText,
+    cancelSummarization,
     progress,
   };
 }

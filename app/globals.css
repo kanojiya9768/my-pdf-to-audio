@@ -18,3 +18,49 @@
     --foreground: #ededed;
   }
 }
+
+
+ @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  .animate-blink {
+    animation: blink 0.8s step-end infinite;
+  }
+  @keyframes text-fade-in {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-text-fade-in {
+    animation: text-fade-in 0.3s ease-out;
+  }
+  @keyframes pulse-button {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  .animate-pulse-button {
+    animation: pulse-button 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dots {
+    0% { content: "."; }
+    33% { content: ".."; }
+    66% { content: "..."; }
+  }
+  .animate-pulse-dots:after {
+    content: ".";
+    animation: pulse-dots 1.5s step-end infinite;
+  }
+  .scroll-smooth::-webkit-scrollbar {
+    width: 8px;
+  }
+  .scroll-smooth::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+  }
+  .scroll-smooth::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 8px;
+  }
+  .scroll-smooth::-webkit-scrollbar-thumb:hover {
+    background: #374151;
+  }
