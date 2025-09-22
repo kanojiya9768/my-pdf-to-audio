@@ -457,7 +457,7 @@ const SummaryDisplay = ({
             </select>
           </label>
           <label className="block pt-3">
-            Select Which Outout:
+            Select Outout To Be Speaked:
             <select
               value={selectOutputForAudio || ""}
               onChange={(e) => setSelectOutputForAudio(e.target.value)}
