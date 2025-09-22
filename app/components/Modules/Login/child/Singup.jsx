@@ -40,9 +40,8 @@ export default function SignupForm({ onToggle }) {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Please verify your email. Check your inbox!");
+      toast.success("Check your inbox. Please verify your email.!");
       reset();
-      setTimeout(() => replace("https://gmail.com"), 1000);
     }
   };
 
