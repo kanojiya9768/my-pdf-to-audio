@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
 import { Loader, Download } from "lucide-react";
 import Header from "./child/Header";
 import FileUpload from "./child/FileUpload";
@@ -9,8 +9,8 @@ import { QUALITY_CONFIG } from "@/lib/constantJSON";
 import { ExtractionError } from "./child/ExtrractionError";
 import TextPreview from "./child/TextPreview";
 import InetractiveTextDisplay from "./child/InetractiveTextDisplay";
+import SummaryDisplay from "./child/SummaryDisplay"; // Assuming SummaryDisplay is in child folder
 import usePdfReader from "@/utils/hooks/usePdfReader";
-import axios from "axios";
 
 const HomePage = () => {
   const {
@@ -35,6 +35,9 @@ const HomePage = () => {
     setCurrentPosition,
     currentSentence,
     textQuality,
+    summary,
+    isSummarizing,
+    summarizationError,
 
     // refs
     fileInputRef,
@@ -52,52 +55,12 @@ const HomePage = () => {
     skipBackward,
     speakTextEnhanced,
     exportText,
+    summarizeText,
+    cancelSummarization,
 
     // derived
     progress,
   } = usePdfReader();
-
-  const fetchData = async () => {
-    try {
-      const response = await axios.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          model: "x-ai/grok-4-fast:free",
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "What is in this image?",
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-                  },
-                },
-              ],
-            },
-          ],
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization:
-              "Bearer " + process.env["NEXT_PUBLIC_OPEN_ROUTER_GROK_4_API_KEY"],
-          },
-        }
-      );
-      console.log(response.data.choices[0].message.content);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   return (
     <div className="h-full p-4">
@@ -224,6 +187,19 @@ const HomePage = () => {
                 />
               )}
 
+              {/* AI Summary - Streaming ChatGPT-like Display */}
+              {extractedText && (
+                <SummaryDisplay
+                  summary={summary}
+                  isSummarizing={isSummarizing}
+                  summarizationError={summarizationError}
+                  summarizeText={summarizeText}
+                  cancelSummarization={cancelSummarization}
+                  extractedText={extractedText}
+                  speakTextEnhanced={speakTextEnhanced}
+                />
+              )}
+
               {/* Helpful Tips */}
               {!extractedText && !isExtracting && (
                 <div className="bg-blue-50 rounded-xl p-6">
@@ -262,20 +238,5 @@ const HomePage = () => {
     </div>
   );
 };
-
-// Initialize PDF.js when component loads
-if (typeof window !== "undefined") {
-  // Dynamic import to avoid SSR issues
-  const script = document.createElement("script");
-  script.src =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-  script.onload = () => {
-    if (window.pdfjsLib) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    }
-  };
-  document.head.appendChild(script);
-}
 
 export default HomePage;
