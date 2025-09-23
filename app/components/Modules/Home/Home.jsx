@@ -202,11 +202,21 @@ const HomePage = () => {
                     Tips for Better Results
                   </h3>
                   <div className="space-y-2 text-sm text-blue-700">
-                    <p>• <strong>Image-based PDFs:</strong> Use OCR first.</p>
-                    <p>• <strong>Garbled text:</strong> Try another method.</p>
-                    <p>• <strong>Password-protected:</strong> Remove password.</p>
-                    <p>• <strong>Large files:</strong> May take longer.</p>
-                    <p>• <strong>Languages:</strong> Works best with English.</p>
+                    <p>
+                      • <strong>Image-based PDFs:</strong> Use OCR first.
+                    </p>
+                    <p>
+                      • <strong>Garbled text:</strong> Try another method.
+                    </p>
+                    <p>
+                      • <strong>Password-protected:</strong> Remove password.
+                    </p>
+                    <p>
+                      • <strong>Large files:</strong> May take longer.
+                    </p>
+                    <p>
+                      • <strong>Languages:</strong> Works best with English.
+                    </p>
                   </div>
                 </div>
               )}
@@ -216,7 +226,10 @@ const HomePage = () => {
       </div>
 
       {/* Modal for AI Summary */}
-      <Modal isOpen={isSummaryModalOpen} onClose={() => setIsSummaryModalOpen(false)}>
+      <Modal
+        isOpen={isSummaryModalOpen}
+        onClose={() => setIsSummaryModalOpen(false)}
+      >
         <SummaryDisplay
           summary={summary}
           isSummarizing={isSummarizing}
