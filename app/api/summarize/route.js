@@ -16,10 +16,10 @@ export async function POST(request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPEN_ROUTER_GROK_4_API_KEY}`,
+          Authorization: `Bearer ${process.env.OPEN_ROUTER_API}`,
         },
         body: JSON.stringify({
-          model: "x-ai/grok-4-fast:free",
+          model: "openai/gpt-oss-20b:free",
           messages: [
             {
               role: "user",
